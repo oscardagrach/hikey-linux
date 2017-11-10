@@ -403,7 +403,7 @@ struct hci_dev {
 	bdaddr_t		rpa;
 
 #if IS_ENABLED(CONFIG_BT_LEDS)
-	struct led_trigger	*power_led;
+	struct led_trigger	*act_led;
 #endif
 
 	int (*open)(struct hci_dev *hdev);

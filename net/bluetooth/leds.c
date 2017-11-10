@@ -11,7 +11,8 @@
 
 #include "leds.h"
 
-DEFINE_LED_TRIGGER(bt_power_led_trigger);
+DEFINE_LED_TRIGGER(bt_act_led_trigger);
+#define ACT_BLINK_DELAY		50 /* ms */
 
 struct hci_basic_led_trigger {
 	struct led_trigger	led_trigger;
@@ -21,10 +22,19 @@ struct hci_basic_led_trigger {
 #define to_hci_basic_led_trigger(arg) container_of(arg, \
 			struct hci_basic_led_trigger, led_trigger)
 
+void hci_leds_blink_oneshot(struct hci_dev *hdev)
+{
+	unsigned long led_delay = ACT_BLINK_DELAY;
+
+	if (!hdev->act_led)
+		return;
+	led_trigger_blink_oneshot(hdev->act_led, &led_delay, &led_delay, 1);
+}
+
 void hci_leds_update_powered(struct hci_dev *hdev, bool enabled)
 {
-	if (hdev->power_led)
-		led_trigger_event(hdev->power_led,
+	if (hdev->act_led)
+		led_trigger_event(hdev->act_led,
 				  enabled ? LED_FULL : LED_OFF);
 
 	if (!enabled) {
@@ -40,7 +50,7 @@ void hci_leds_update_powered(struct hci_dev *hdev, bool enabled)
 		read_unlock(&hci_dev_list_lock);
 	}
 
-	led_trigger_event(bt_power_led_trigger, enabled ? LED_FULL : LED_OFF);
+	led_trigger_event(bt_act_led_trigger, enabled ? LED_FULL : LED_OFF);
 }
 
 static void power_activate(struct led_classdev *led_cdev)
@@ -86,16 +96,16 @@ err_alloc:
 
 void hci_leds_init(struct hci_dev *hdev)
 {
-	/* initialize power_led */
-	hdev->power_led = led_allocate_basic(hdev, power_activate, "power");
+	/* initialize act_led */
+	hdev->act_led = led_allocate_basic(hdev, power_activate, "act");
 }
 
 void bt_leds_init(void)
 {
-	led_trigger_register_simple("bluetooth-power", &bt_power_led_trigger);
+	led_trigger_register_simple("bluetooth", &bt_act_led_trigger);
 }
 
 void bt_leds_cleanup(void)
 {
-	led_trigger_unregister_simple(bt_power_led_trigger);
+	led_trigger_unregister_simple(bt_act_led_trigger);
 }

@@ -8,6 +8,7 @@
 
 #if IS_ENABLED(CONFIG_BT_LEDS)
 
+void hci_leds_blink_oneshot(struct hci_dev *hdev);
 void hci_leds_update_powered(struct hci_dev *hdev, bool enabled);
 void hci_leds_init(struct hci_dev *hdev);
 
