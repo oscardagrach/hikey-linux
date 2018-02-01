@@ -630,7 +630,7 @@ int ring_buffer_wait(struct ring_buffer *buffer, int cpu, bool full)
  * Returns POLLIN | POLLRDNORM if data exists in the buffers,
  * zero otherwise.
  */
-int ring_buffer_poll_wait(struct ring_buffer *buffer, int cpu,
+__poll_t ring_buffer_poll_wait(struct ring_buffer *buffer, int cpu,
 			  struct file *filp, poll_table *poll_table)
 {
 	struct ring_buffer_per_cpu *cpu_buffer;
@@ -2579,8 +2579,7 @@ trace_recursive_lock(struct ring_buffer_per_cpu *cpu_buffer)
 		bit = RB_CTX_NORMAL;
 	else
 		bit = pc & NMI_MASK ? RB_CTX_NMI :
-			pc & HARDIRQ_MASK ? RB_CTX_IRQ :
-			pc & SOFTIRQ_OFFSET ? 2 : RB_CTX_SOFTIRQ;
+			pc & HARDIRQ_MASK ? RB_CTX_IRQ : RB_CTX_SOFTIRQ;
 
 	if (unlikely(val & (1 << bit)))
 		return 1;
