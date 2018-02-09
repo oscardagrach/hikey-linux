@@ -303,6 +303,7 @@ int hci_uart_register_device(struct hci_uart *hu,
 	hci_set_drvdata(hdev, hu);
 
 	INIT_WORK(&hu->write_work, hci_uart_write_work);
+	percpu_init_rwsem(&hu->proto_lock);
 
 	percpu_init_rwsem(&hu->proto_lock);
 
