@@ -229,10 +229,9 @@ static void timeline_print_obj(struct seq_file *s, struct sync_timeline *sync_tl
 				mali_spinlock_reentrant_signal(system->spinlock, tid);
 			}
 			mali_spinlock_reentrant_signal(mali_tl->spinlock, tid);
-#ifndef CONFIG_FTRACE
+
 			/* dump job queue status and group running status */
 			mali_executor_status_dump();
-#endif
 		}
 #endif
 	}
@@ -286,10 +285,9 @@ static void timeline_value_str(struct sync_timeline *timeline, char *str, int si
 				mali_spinlock_reentrant_signal(system->spinlock, tid);
 			}
 			mali_spinlock_reentrant_signal(mali_tl->spinlock, tid);
-#ifndef CONFIG_FTRACE
+
 			/* dump job queue status and group running status */
 			mali_executor_status_dump();
-#endif
 		}
 #endif
 	}
@@ -603,22 +601,12 @@ struct mali_internal_sync_fence *mali_sync_flag_create_fence(struct mali_sync_fl
 		MALI_PRINT_ERROR(("Mali sync: sync_pt creation failed\n"));
 		return NULL;
 	}
-	sync_fence = (struct mali_internal_sync_fence *)sync_file_create(&sync_pt->base);
+	sync_fence = mali_internal_sync_fence_create(sync_pt);
 	if (NULL == sync_fence) {
 		MALI_PRINT_ERROR(("Mali sync: sync_fence creation failed\n"));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 		dma_fence_put(&sync_pt->base);
-#else
-		fence_put(&sync_pt->base);
-#endif
 		return NULL;
 	}
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-	fence_put(&sync_pt->base);
-#else
-	dma_fence_put(&sync_pt->base);
-#endif
 
 	return sync_fence;
 }
@@ -665,3 +653,5 @@ void mali_sync_flag_signal(struct mali_sync_flag *flag, int error)
 	mali_internal_sync_timeline_signal(flag->sync_tl);
 #endif
 }
+
+
