@@ -194,11 +194,10 @@ static void dw_mci_hi6220_set_ios(struct dw_mci *host, struct mmc_ios *ios)
 	int ret;
 	unsigned int clock;
 
-	/* CLKDIV must be 1 for DDR52/8-bit mode */
-	if (ios->bus_width == MMC_BUS_WIDTH_8 &&
-		ios->timing == MMC_TIMING_MMC_DDR52) {
+	if (ios->bus_width == MMC_BUS_WIDTH_8 && ios->timing ==
+			MMC_TIMING_MMC_DDR52) {
 		mci_writel(host, CLKDIV, 0x1);
-		clock = ios->clock;
+		clock = ios->clock * 2;
 	} else {
 		clock = (ios->clock <= 25000000) ? 25000000 : ios->clock;
 	}
