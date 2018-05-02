@@ -100,11 +100,20 @@ pgprot_t protection_map[16] __ro_after_init = {
 	__S000, __S001, __S010, __S011, __S100, __S101, __S110, __S111
 };
 
+#ifndef CONFIG_ARCH_HAS_FILTER_PGPROT
+static inline pgprot_t arch_filter_pgprot(pgprot_t prot)
+{
+	return prot;
+}
+#endif
+
 pgprot_t vm_get_page_prot(unsigned long vm_flags)
 {
-	return __pgprot(pgprot_val(protection_map[vm_flags &
+	pgprot_t ret = __pgprot(pgprot_val(protection_map[vm_flags &
 				(VM_READ|VM_WRITE|VM_EXEC|VM_SHARED)]) |
 			pgprot_val(arch_vm_get_page_prot(vm_flags)));
+
+	return arch_filter_pgprot(ret);
 }
 EXPORT_SYMBOL(vm_get_page_prot);
 
@@ -1342,6 +1351,10 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 		if (!(file && path_noexec(&file->f_path)))
 			prot |= PROT_EXEC;
 
+	/* force arch specific MAP_FIXED handling in get_unmapped_area */
+	if (flags & MAP_FIXED_NOREPLACE)
+		flags |= MAP_FIXED;
+
 	if (!(flags & MAP_FIXED))
 		addr = round_hint_to_min(addr);
 
@@ -1364,6 +1377,13 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	addr = get_unmapped_area(file, addr, len, pgoff, flags);
 	if (offset_in_page(addr))
 		return addr;
+
+	if (flags & MAP_FIXED_NOREPLACE) {
+		struct vm_area_struct *vma = find_vma(mm, addr);
+
+		if (vma && vma->vm_start <= addr)
+			return -EEXIST;
+	}
 
 	if (prot == PROT_EXEC) {
 		pkey = execute_only_pkey(mm);
@@ -3191,13 +3211,15 @@ bool may_expand_vm(struct mm_struct *mm, vm_flags_t flags, unsigned long npages)
 		if (rlimit(RLIMIT_DATA) == 0 &&
 		    mm->data_vm + npages <= rlimit_max(RLIMIT_DATA) >> PAGE_SHIFT)
 			return true;
-		if (!ignore_rlimit_data) {
-			pr_warn_once("%s (%d): VmData %lu exceed data ulimit %lu. Update limits or use boot option ignore_rlimit_data.\n",
-				     current->comm, current->pid,
-				     (mm->data_vm + npages) << PAGE_SHIFT,
-				     rlimit(RLIMIT_DATA));
+
+		pr_warn_once("%s (%d): VmData %lu exceed data ulimit %lu. Update limits%s.\n",
+			     current->comm, current->pid,
+			     (mm->data_vm + npages) << PAGE_SHIFT,
+			     rlimit(RLIMIT_DATA),
+			     ignore_rlimit_data ? "" : " or use boot option ignore_rlimit_data");
+
+		if (!ignore_rlimit_data)
 			return false;
-		}
 	}
 
 	return true;
