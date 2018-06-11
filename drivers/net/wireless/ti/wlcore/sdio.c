@@ -150,13 +150,11 @@ static int __must_check wl12xx_sdio_raw_write(struct device *child, int addr,
 
 static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 {
-	//int ret;
+	int ret;
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
 
-	pm_runtime_get_sync(&card->dev);
-
-	/*
+	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
 		pm_runtime_put_noidle(&card->dev);
 		dev_err(glue->dev, "%s: failed to get_sync(%d)\n",
@@ -164,7 +162,6 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 
 		return ret;
 	}
-	*/
 
 	sdio_claim_host(func);
 	sdio_enable_func(func);
