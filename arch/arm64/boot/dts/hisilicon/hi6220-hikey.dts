@@ -323,6 +323,8 @@
 			bus-width = <0x4>;
 			cap-sd-highspeed;
 			non-removable;
+			cap-power-off-card;
+			keep-power-in-suspend;
 			vmmc-supply = <&reg_vdd_3v3>;
 			mmc-pwrseq = <&wl1835_pwrseq>;
 
