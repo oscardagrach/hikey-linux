@@ -585,6 +585,7 @@
 	vmmc-supply = <&wlan_en>;
 	ti,non-removable;
 	non-removable;
+	cap-sd-highspeed;
 	cap-power-off-card;
 	keep-power-in-suspend;
 	#address-cells = <0x1>;
